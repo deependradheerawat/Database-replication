@@ -1,0 +1,72 @@
+Database master-slave replication 
+Requirements Two server running on amazon linux 
+launch 2 ec2 instance 
+Install Mysql 5.7 on both server's
+STEPS
+sudo yum update -y 
+sudo rpm -Uvh https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm 
+rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+sudo yum install mysql-community-server -y
+sudo systemctl enable mysqld 
+sudo systemctl start mysqld 
+sudo grep 'temporary password' /var/log/mysqld.log   #Temporary password for root 
+
+sudo mysql_secure_installation
+Enter password for user root: [Enter current root password]  Root@1234
+New password: [Enter a new root password]
+Re-enter new password: [Re-Enter the new root password]
+Estimated strength of the password: 100
+Change the password for root ? ((Press y|Y for Yes, any other key for No) : n
+Remove anonymous users? (Press y|Y for Yes, any other key for No) : y
+Disallow root login remotely? (Press y|Y for Yes, any other key for No) : y
+Remove test database and access to it? (Press y|Y for Yes, any other key for No) : y
+Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y
+All done!
+
+
+Check connectivity of both server's 
+telnet ip port 
+
+#Configure MySQL on Master Node
+vim /etc/my.cnf
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+bind-address = Master-node-ip
+server-id = 1
+
+log_bin = /var/log/mysql/mysql-bin.log
+log_bin_index =/var/log/mysql/mysql-bin.log.index
+relay_log = /var/log/mysql/mysql-relay-bin
+relay_log_index = /var/log/mysql/mysql-relay-bin.index
+
+systemctl restart mysql
+mysql -u root -p
+mysql> CREATE USER 'replication_user'@'your-slave-ip' IDENTIFIED BY 'password';
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'replication_user'@'your-slave-ip';
+mysql> FLUSH PRIVILEGES;
+mysql> SHOW MASTER STATUS
+
+YOU WILL GET MASTER LOG FILE AND MASTER LOG POSITION OF DB
+mysql-bin.000001
+795
+
+#Configure the Slave Node
+Vim /etc/my.cnf
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+bind-address = Slave-node-ip
+server-id = 2
+
+log_bin = /var/log/mysql/mysql-bin.log
+log_bin_index =/var/log/mysql/mysql-bin.log.index
+relay_log = /var/log/mysql/mysql-relay-bin
+relay_log_index = /var/log/mysql/mysql-relay-bin.index
+
+systemctl restart mysql
+mysql -u root -p
+mysql> STOP SLAVE;
+mysql> CHANGE MASTER TO MASTER_HOST ='master-node-ip', MASTER_USER ='replication_user', MASTER_PASSWORD ='Root@1234', MASTER_LOG_FILE = 'mysql-bin.000001', MASTER_LOG_POS = 795;
+mysql> START SLAVE;
+
+Test the Master-Slave Replication
+login to the MySQL on the Master Node and create a new db then check on slave node
