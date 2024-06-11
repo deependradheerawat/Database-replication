@@ -1,0 +1,73 @@
+BASIC UNDERSTANDING 
+step 1 : /etc/my.cnf   5 BASIC PARAMETER  INNODB 
+innodb_buffer_pool_instances 	Default in 32 bit system is autoextend and in 64 bit system it is set to 1	16
+innodb_buffer_pool_size	16G	Same as current value
+innodb_log_buffer_size	1M	32M
+max_connections	2625	16000
+sync_binlog	16	
+sort_buffer_size	4M
+
+Bind Ip : 0.0.0.0/ 1.0.0.127
+
+commited binlog ==> Disk 
+
+Simple trx (insert 1 records) ==> redo log (Commit/rollback) ==> binlog (1Gb) ==> disk write
+
+create database test1;
+create table table1 (ph_number int(10), PK );
+Insert into table1 (123456789,987456321,456987123);
+
+Value 
+1   123456789
+2   987456321
+3   456987123
+
+Update table1 set Ph_number=123123123 where id=2;
+
+delete from table1 where id=3;
+
+select * from table1 where id in (2,3);
+
+
+Alter, Create user, truncate,drop 
+
+ALter table table1 add colum pin_code int(6); add index indx_pin (pin_code);
+
+
+Create user username@'1.0.0.127' identified by 'PASSWORD';
+
+Grant select,update,delete,insert on *.* to  username@'1.0.0.127'; -- full db access 
+Grant select,update,delete,insert on test1.*  to  username@'1.0.0.127'; -- particular db access 
+Grant select,update,delete,insert on test1.table1 to  username@'1.0.0.127'; -- particular db and particular table access 
+
+
+i.e  SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, PROCESS, REFERENCES, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, REPLICATION SLAVE, REPLICATION CLIENT, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, CREATE USER, EVENT, TRIGGER ON UPDATE 
+
+
+
+
+High Availablity 
+
+MASTER SLAVE 
+
+MASTER MASTER 
+
+
+MASTER SLAVE 
+DB1 MASTER (all write/read ops)
+ |
+DB2 SLAVE (read ops only) (parameter name read_only - ON or OFF)
+
+
+MASTER MASTER
+
+DB1 (master for DB2) / (SlAVE of DB2)
+ |
+DB2 (master for DB1) / (SlAVE of DB1) 
+
+VIP or orchestration
+VIP script will check heartbeat of master and slave  every second 
+orchestration = GUI Tool to manage replication also check heartbeat of master and slave every second in the backend,
+
+https://thilinamad.medium.com/mysql-db-replication-63786ac8241e  
+https://snapshooter.com/learn/mysql/MySQL-replication   for replication 
